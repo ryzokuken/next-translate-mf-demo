@@ -1,5 +1,6 @@
 import Head from 'next/head'
 import Image from 'next/image'
+import Trans from "next-translate/Trans";
 import { Inter } from 'next/font/google'
 import styles from '@/styles/Home.module.css'
 
@@ -15,6 +16,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className={`${styles.main} ${inter.className}`}>
+        <Trans i18nKey='common:variable-example' values={{count: 42}} />
         <div className={styles.description}>
           <p>
             Get started by editing&nbsp;
