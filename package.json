@@ -4,11 +4,17 @@
   "description": "next-translate clone using messageformat v2",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc index.ts",
+    "start": "node index.js"
   },
   "author": "Ujjwal Sharma <ryzokuken@igalia.com>",
   "license": "GPL-3.0",
+  "devDependencies": {
+    "@types/node": "^20.9.0",
+    "typescript": "^5.2.2"
+  },
   "dependencies": {
-    "messageformat": "4.0.0-4"
+    "messageformat": "^4.0.0-5"
   }
 }
