@@ -8,8 +8,9 @@ Your mileage may vary.
 * Clone this repo
 
 In this repo:
+`cd demo`
 `yarn`
-This installs react, react-dom, @types/react, and @types/react-dom under node-modules.
+This installs react, react-dom, @types/react, and @types/react-dom under demo/node-modules.
 For each of these 4 packages:
 
 - Go into the right subdir under node-modules/
@@ -33,3 +34,11 @@ To confirm that each of the 4 react libraries only has one version:
 $ yarn why react
 (repeating for each library)
 You should see only one entry, whether you do that in this repo or in next-translate or next-translate-plugin.
+
+Finally: return to the next-translate-mf-demo/demo directory and do:
+yarn link next-translate
+yarn link next-translate-plugin
+npm run dev
+
+In a browser, visit the URL:
+http://localhost:3000/mftest
