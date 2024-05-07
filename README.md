@@ -4,6 +4,7 @@ I had to do something like the following to get this to work.
 Your mileage may vary.
 
 * Clone https://github.com/catamorphism/next-translate
+  * Then check out the `mf2` branch
 * Clone https://github.com/aralroca/next-translate-plugin
 * Clone this repo
 
