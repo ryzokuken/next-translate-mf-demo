@@ -5,7 +5,7 @@ import React from 'react'
 import useTranslation from 'next-translate/useTranslation'
 // import { MessageFormat, MessageFormatOptions, MessageFunctions, MessageValue } from "@messageformat/core";
 // import { MessageFormat, MessageFormatOptions, MessageFunctions, MessageValue } from "messageformat";
-import { MessageFormat, MessageFormatOptions, MessageFunctions } from "messageformat";
+import { MessageFormat, MessageFormatOptions, MessageFunctions, type MessageExpressionPart, type MessagePart } from "messageformat";
 import Trans from "next-translate/Trans"
 import I18nProvider from "next-translate/I18nProvider"
 
@@ -43,7 +43,7 @@ const mf = new MessageFormat(convertedMsg, 'en', {
             locale: ctx.locales[0],
             source: 'NA',
             toString: () => "test",
-            toParts: () => [{ type: 'literal', value: 'test-part' }]
+            toParts: () => [{ type: 'literal', value: 'test-part' } as MessageExpressionPart]
         })
     }
 });
@@ -93,32 +93,33 @@ const parts = mf.formatToParts({count: 1});
 //   }
 // }
 
-var toDo = [...parts];
+const toDo: MessagePart[] = [...parts];
 
 console.log(toDo);
 
-function ProcessNodes(parts : [[object]]) {
+function ProcessNodes(parts : MessagePart[]) {
    if (toDo.length === 0) {
       return parts;
    }
    if (toDo[0].type === 'literal') {
-      const head = toDo.pop();
-      return ProcessNodes(parts + [head]);
+      const head = toDo.pop() as MessagePart;
+      return ProcessNodes(parts.toSpliced(-1, 0, head));
    }
    if (parts[0].type === 'markup') {
       if (parts[0].kind === 'open') {
-         const openNode : object = toDo.pop();
-         const tree : [object] = ProcessNodes();
-         const closeNode : object = toDo.pop();
+         const openNode : MessagePart = toDo.pop() as MessagePart;
+         const tree : MessagePart[] = ProcessNodes([]);
+         const closeNode : MessagePart = toDo.pop() as MessagePart;
          if (closeNode.kind !== 'close') {
             console.log("Warning: unmatched tags!");
          }
-         return ProcessNodes(parts + [tree]);
+         return ProcessNodes(parts.toSpliced(-1, 0, [openNode + tree + [closeNode]]));
       }
       if (parts[0].kind === 'close') {
          return parts;
       }
   }
+  return parts;
 }
 
 const processed : [[object]] = ProcessNodes(parts);
