@@ -10,6 +10,8 @@ import {
 	MessageFormatOptions,
 	MessageFunctions,
 	type MessageExpressionPart,
+        type MessageLiteralPart,
+        type MessageMarkupPart,
 	type MessagePart,
 } from "messageformat";
 import Trans from "next-translate/Trans";
@@ -71,58 +73,89 @@ const messageToUse = message;
 //   }
 // }
 
+// TODO: What we should probably really do is define a
+// `Tree` interface
 function ProcessPartsList(parts: MessagePart[]) {
+    // Make a copy of `parts` so we can modify it
 	const toDo: MessagePart[] = [...parts];
 
-	function ProcessNodes(accum: MessagePart[][]) {
+    // ProcessNodes() processes a flat list of message parts
+    // into a tree structure.
+    // (Currently only handles one level of nesting.)
+    // `accum` is the list of already-processed subtrees.
+    // The individual elements in the list are all `MessageParts`,
+    // but the lists in the returned value may be nested arbitrarily.
+	function ProcessNodes(accum: object[]) : object[] {
 		if (toDo.length === 0) {
 			return accum;
 		}
+        // Literal node: append onto the existing list
 		if (toDo[0].type === "literal") {
-			const head = toDo.shift() as MessagePart;
-			return ProcessNodes(accum.toSpliced(accum.length, 0, head));
+			return ProcessNodes(accum.toSpliced(accum.length, 0, toDo.shift() as MessagePart));
 		}
+        // Markup node: should be an `open` node if the output of formatToParts()
+        // is valid.
 		if (toDo[0].type === "markup") {
-			if (toDo[0].kind === "open") {
-				const openNode: MessagePart = toDo.shift() as MessagePart;
-				const tree: MessagePart[] = ProcessNodes([]);
-				const closeNode: MessagePart = toDo.shift() as MessagePart;
+            const markupNode = toDo[0] as MessageMarkupPart;
+			if (markupNode.kind === "open") {
+                const openNode: MessageMarkupPart = toDo.shift() as MessageMarkupPart;
+                // Recursively process everything between the open and close nodes
+				const tree: object[] = ProcessNodes([]);
+				const closeNode: MessageMarkupPart = toDo.shift() as MessageMarkupPart;
 				if (closeNode.kind !== "close") {
 					console.log("Warning: unmatched tags!");
 				}
+                // Append a new subtree representing the tree denoted by this markup open/close pair
+                // TODO: To handle arbitrary nesting, we really want `tree` and not `...tree`
 				return ProcessNodes(
 					accum.toSpliced(accum.length, 0, [openNode, ...tree, closeNode]),
 				);
 			}
-			if (toDo[0].kind === "close") {
+            // When we see a close tag, we just return the accumulator
+			if (markupNode.kind === "close") {
 				return accum;
 			}
 		}
-		return ProcessNodes(accum.toSpliced(accum.length, 0, toDo.shift()));
+        // Default case (not markup or literal): append onto the existing list
+		return ProcessNodes(accum.toSpliced(accum.length, 0, toDo.shift() as MessagePart));
 	}
 	return ProcessNodes([]);
 }
 
 let count = 0;
 
+// hetList is really a list of arbitrarily-nested lists where all the
+// leaf elements are MessageParts
 function HetListToDOMTree(
-	hetList: MessagePart[][],
+	hetList: object[],
 	components: Record<string, React.JSX.Element>,
 ): JSX.Element[] {
-	return hetList.map((part) => {
+	return hetList.flatMap((part) => {
+        // part is either a (nested) list of MessageParts, or a single MessagePart
 		if (Array.isArray(part)) {
 			// asserts
 			const newPart = [...part];
 			if (newPart.length === 0) return [];
-			const open = newPart.shift();
+            // The first element of the list should be an open node
+			const open : MessageMarkupPart = newPart.shift();
+            // The last element of the list should be a close node, which we ignore
 			const _close = newPart.pop();
+            // `subtree` is all the nodes between the open and the close
 			const subtree = HetListToDOMTree(newPart, components);
+            // Use the name of the open node to look up the component in the map
+            // (we assume open.name === close.name)
+            // TODO: this means overlapping tags don't work
 			const component = components[open.name]; //assert
+            // Finally, wrap the sublist in a component of the kind
+            // that matches its markup's name
 			return React.cloneElement(component, { key: count++ }, ...subtree);
 		}
+        // If part is not an array, it must be a MessagePart
+        const messagePart = part as MessagePart;
 		switch (part.type) {
 			case "literal":
-				return <React.Fragment key={count++}>{part.value}</React.Fragment>;
+				// Literals are just strings
+                return <React.Fragment key={count++}>{part.value}</React.Fragment>;
 			case "markup":
 				// assert part.kind=standalone
 				return React.cloneElement(components[part.name], { key: count++ });
@@ -130,6 +163,7 @@ function HetListToDOMTree(
 				return (
 					<React.Fragment key={count++}>
 						{part.parts.reduce((acc, part) => acc + part.value, "")}
+
 					</React.Fragment>
 				);
 			default:
