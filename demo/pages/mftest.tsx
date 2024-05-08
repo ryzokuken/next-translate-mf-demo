@@ -64,7 +64,7 @@ const mf2Message = convertMessageSyntax(message)
 const messageToUse = message
 console.log("Converted: " + mf2Message)
 
-const parts = mf.formatToParts({count: 1});
+const list = mf.formatToParts({count: 1});
 // console.log("parts = " + JSON.stringify(parts));
 
 // for (const p in parts) {
@@ -93,45 +93,66 @@ const parts = mf.formatToParts({count: 1});
 //   }
 // }
 
-const toDo: MessagePart[] = [...parts];
+function ProcessPartsList(parts: MessagePart[]) {
+    const toDo: MessagePart[] = [...parts];
 
-console.log(toDo);
-
-function ProcessNodes(parts : MessagePart[]) {
-   if (toDo.length === 0) {
-      return parts;
-   }
-   if (toDo[0].type === 'literal') {
-      const head = toDo.pop() as MessagePart;
-      return ProcessNodes(parts.toSpliced(-1, 0, head));
-   }
-   if (parts[0].type === 'markup') {
-      if (parts[0].kind === 'open') {
-         const openNode : MessagePart = toDo.pop() as MessagePart;
-         const tree : MessagePart[] = ProcessNodes([]);
-         const closeNode : MessagePart = toDo.pop() as MessagePart;
-         if (closeNode.kind !== 'close') {
-            console.log("Warning: unmatched tags!");
-         }
-         return ProcessNodes(parts.toSpliced(-1, 0, [openNode + tree + [closeNode]]));
-      }
-      if (parts[0].kind === 'close') {
-         return parts;
-      }
-  }
-  return parts;
+    function ProcessNodes(accum : MessagePart[][]) {
+        if (toDo.length === 0) {
+            return accum;
+        }
+        if (toDo[0].type === 'literal') {
+            const head = toDo.shift() as MessagePart;
+            return ProcessNodes(accum.toSpliced(accum.length, 0, head));
+        }
+        if (toDo[0].type === 'markup') {
+            if (toDo[0].kind === 'open') {
+                const openNode : MessagePart = toDo.shift() as MessagePart;
+                const tree : MessagePart[] = ProcessNodes([]);
+                const closeNode : MessagePart = toDo.shift() as MessagePart;
+                if (closeNode.kind !== 'close') {
+                    console.log("Warning: unmatched tags!");
+                }
+                return ProcessNodes(accum.toSpliced(accum.length, 0, [openNode, ...tree, closeNode]));
+            }
+            if (toDo[0].kind === 'close') {
+                return accum;
+            }
+        }
+        return ProcessNodes(accum.toSpliced(accum.length, 0, toDo.shift()));
+    }
+    return ProcessNodes([]);
 }
 
-const processed : [[object]] = ProcessNodes(parts);
+let count = 0;
 
+function HetListToDOMTree(hetList: MessagePart[][], components: object): JSX.Element[] {
+    return hetList.map(part => {
+        if (Array.isArray(part)) {
+            // asserts
+            const newPart = [...part];
+            if (newPart.length === 0) return [];
+            const open = newPart.shift();
+            const _close = newPart.pop();
+            const subtree = HetListToDOMTree(newPart, components);
+            const Component = components[open.name]; //assert
+            if (Component === undefined) {
+                console.log(open);
+                console.log(close);
+            }
+            console.log(...subtree);
+            return <Component key={count++}>{...subtree}</Component>
+        }
+        switch (part.type) {
+            case "literal": return <React.Fragment key={count++}>{part.value}</React.Fragment>
+            case "number": return <React.Fragment key={count++}>{JSON.stringify(part.parts)}</React.Fragment>
+            default: throw new Error('unreachable')
+        }
+    })
+}
+
+const processed = ProcessPartsList(list);
 console.log("Processed:");
-console.log(typeof(processed));
-
-for (const p in processed) {
-  console.log("Start:");
-  console.log(processed[p]);
-  console.log("End:");
-}
+console.log(processed);
 
 
 // In the following, change `messageToUse` to `mf2Message` to test
@@ -155,7 +176,7 @@ export function Test() {
             }}
             // This is without pluralizing the count value
             values={{ count: 42 }}
-            defaultTrans={mf2Message}
+            defaultTrans={messageToUse}
         />
         </I18nProvider>
      </p>
@@ -165,5 +186,15 @@ export function Test() {
 }
 
 export default function Home() {
-
+	return (
+		<>
+			<p>
+				{...HetListToDOMTree(processed, {
+					link: (props) => <a href="/">{props.children}</a>,
+					b: () => <b style={{ color: "purple" }} />,
+					icon: () => <img src="https://imgs.xkcd.com/comics/purity.png" />,
+				})}
+			</p>
+		</>
+	);
 }
