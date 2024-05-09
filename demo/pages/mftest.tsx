@@ -125,7 +125,7 @@ function ProcessPartsList(parts: MessagePart[]) {
 
 let count = 0;
 
-function HetListToDOMTree(hetList: MessagePart[][], components: object): JSX.Element[] {
+function HetListToDOMTree(hetList: MessagePart[][], components: Record<string, React.JSX.Element>): JSX.Element[] {
     return hetList.map(part => {
         if (Array.isArray(part)) {
             // asserts
@@ -134,13 +134,8 @@ function HetListToDOMTree(hetList: MessagePart[][], components: object): JSX.Ele
             const open = newPart.shift();
             const _close = newPart.pop();
             const subtree = HetListToDOMTree(newPart, components);
-            const Component = components[open.name]; //assert
-            if (Component === undefined) {
-                console.log(open);
-                console.log(close);
-            }
-            console.log(...subtree);
-            return <Component key={count++}>{...subtree}</Component>
+            const component = components[open.name]; //assert
+            return React.cloneElement(component, {key: count++}, ...subtree);
         }
         switch (part.type) {
             case "literal": return <React.Fragment key={count++}>{part.value}</React.Fragment>
@@ -155,10 +150,10 @@ console.log("Processed:");
 console.log(processed);
 
 
-// In the following, change `messageToUse` to `mf2Message` to test
-// the `messageFormat2` attribute in Trans (not working yet),
-// or change `mf2Message` back to `messageToUse` to test it with
-// a message in next-translate syntax
+In the following, change `messageToUse` to `mf2Message` to test
+the `messageFormat2` attribute in Trans (not working yet),
+or change `mf2Message` back to `messageToUse` to test it with
+a message in next-translate syntax
 export function Test() {
     return (
     <>
@@ -190,9 +185,9 @@ export default function Home() {
 		<>
 			<p>
 				{...HetListToDOMTree(processed, {
-					link: (props) => <a href="/">{props.children}</a>,
-					b: () => <b style={{ color: "purple" }} />,
-					icon: () => <img src="https://imgs.xkcd.com/comics/purity.png" />,
+					link: <a href="/" />,
+					b: <b style={{ color: "purple" }} />,
+					icon: <img src="https://imgs.xkcd.com/comics/purity.png" alt='dummy'/>,
 				})}
 			</p>
 		</>
