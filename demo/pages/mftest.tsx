@@ -125,11 +125,11 @@ function HetListToDOMTree(
 				return <React.Fragment key={count++}>{part.value}</React.Fragment>;
 			case "markup":
 				// assert part.kind=standalone
-				return React.cloneElement(components[part.name], {key: count++});
+				return React.cloneElement(components[part.name], { key: count++ });
 			case "number":
 				return (
 					<React.Fragment key={count++}>
-						{JSON.stringify(part.parts)}
+						{part.parts.reduce((acc, part) => acc + part.value, "")}
 					</React.Fragment>
 				);
 			default:
@@ -192,7 +192,7 @@ export default function Home() {
 							<img src="https://imgs.xkcd.com/comics/purity.png" alt="dummy" />
 						),
 					}}
-					values={{ count: 42 }}
+					values={{ count: 42.2 }}
 				/>
 			</p>
 		</>
