@@ -15,7 +15,7 @@ import {
 import Trans from "next-translate/Trans";
 import I18nProvider from "next-translate/I18nProvider";
 
-const msg = // "{{count}}"
+const msg =
 	"Click <link>here</link>. {{count}} or <b>{{count}}</b>. <icon/> is an icon.";
 
 function convertMessageSyntax(msg: string) {
@@ -25,10 +25,6 @@ function convertMessageSyntax(msg: string) {
 		.replace(/{{(\S+)}}/g, "{$$$1}"); // Convert variable expression syntax
 	return `${replacedTags}`; // No need to wrap message (this is a simple message)
 }
-
-const convertedMsg = convertMessageSyntax(msg);
-console.log(convertedMsg);
-console.log("1");
 
 // const functions = {
 //     link: ({ source, locales: [locale] }, _opt, input) => ({
@@ -42,38 +38,11 @@ console.log("1");
 //     })
 // };
 
-const mf = new MessageFormat(convertedMsg, "en", {
-	functions: {
-		icon: (ctx, opts, input) => ({
-			type: "standalone",
-			locale: ctx.locales[0],
-			source: "NA",
-			toString: () => "test",
-			toParts: () => [
-				{ type: "literal", value: "test-part" } as MessageExpressionPart,
-			],
-		}),
-	},
-});
-
-// const mf = new MessageFormat(convertedMsg, 'en');
-
-// function newMessageValue(): MessageValue {
-//     return {
-//         locale: 'en',
-//         type: 'literal',
-//         source: 'NA',
-//         toString: () => 'hello there!'
-//     }
-// }
-
 const message =
 	"Click <link>here</link>. {{count}} or <b>{{count}}</b>. <icon/> is an icon.";
 const mf2Message = convertMessageSyntax(message);
 const messageToUse = message;
-console.log("Converted: " + mf2Message);
 
-const list = mf.formatToParts({ count: 1 });
 // console.log("parts = " + JSON.stringify(parts));
 
 // for (const p in parts) {
@@ -166,10 +135,6 @@ function HetListToDOMTree(
 	});
 }
 
-const processed = ProcessPartsList(list);
-console.log("Processed:");
-console.log(processed);
-
 // In the following, change `messageToUse` to `mf2Message` to test
 // the `messageFormat2` attribute in Trans (not working yet),
 // or change `mf2Message` back to `messageToUse` to test it with
@@ -202,17 +167,42 @@ export function Test() {
 	);
 }
 
+function MF2Trans(props) {
+	const converted = convertMessageSyntax(props.message);
+	const mf = new MessageFormat(converted, props.locale, {
+		functions: {
+			icon: (ctx, opts, input) => ({
+				type: "standalone",
+				locale: ctx.locales[0],
+				source: "NA",
+				toString: () => "test",
+				toParts: () => [
+					{ type: "literal", value: "test-part" } as MessageExpressionPart,
+				],
+			}),
+		},
+	});
+	const list = mf.formatToParts(props.values);
+	const processed = ProcessPartsList(list);
+	return <>{...HetListToDOMTree(processed, props.components)}</>;
+}
+
 export default function Home() {
 	return (
 		<>
 			<p>
-				{...HetListToDOMTree(processed, {
-					link: <a href="/" />,
-					b: <b style={{ color: "purple" }} />,
-					icon: (
-						<img src="https://imgs.xkcd.com/comics/purity.png" alt="dummy" />
-					),
-				})}
+				<MF2Trans
+					locale="en"
+					message={msg}
+					components={{
+						link: <a href="/" />,
+						b: <b style={{ color: "purple" }} />,
+						icon: (
+							<img src="https://imgs.xkcd.com/comics/purity.png" alt="dummy" />
+						),
+					}}
+					values={{ count: 42 }}
+				/>
 			</p>
 		</>
 	);
