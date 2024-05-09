@@ -188,7 +188,8 @@ function HetListToDOMTree(
 					components[(messagePart as MessageMarkupPart).name],
 					{ key },
 				);
-			case "number": {
+			case "number":
+			case "datetime": {
 				return (
 					<React.Fragment key={key}>
 						{messagePart.parts?.reduce((acc, part) => acc + part.value, "")}
@@ -196,7 +197,7 @@ function HetListToDOMTree(
 				);
 			}
 			default:
-				throw new Error("unreachable");
+				throw new Error("unreachable: " + messagePart.type);
 		}
 	});
 }
@@ -205,7 +206,8 @@ function HetListToDOMTree(
 // the `messageFormat2` attribute in Trans (not working yet),
 // or change `mf2Message` back to `messageToUse` to test it with
 // a message in next-translate syntax
-export function Test() {
+/*
+export default function Home() {
 	return (
 		<>
 			<p>
@@ -215,7 +217,7 @@ export function Test() {
 				{" "}
 				<I18nProvider lang="en">
 					<Trans
-						messageFormat2="true"
+					//	messageFormat2="true"
 						i18nKey="ns"
 						components={{
 							link: <a href="/" />,
@@ -232,15 +234,20 @@ export function Test() {
 		</>
 	);
 }
+*/
 
 function MF2Trans(props) {
 	// const converted = convertMessageSyntax(props.message);
 	const converted =
-		"Click {#link}here{/link}. {$count} or {#b}{#i}{$count}{/i}{/b}. {#icon/} is an icon.";
+		//	"Click {#link}here{/link}. {$count} or {#b}{#i}{$count}{/i}{/b}. {#icon/} is an icon.";
+		// "hello {$count :number minimumFractionDigits=5}";
+		// ".match {$count :number} one {{one}} 1 {{=1}} * {{other}}"
+		"{|2006-01-02T15:04:06| :datetime dateStyle=long timeStyle=long}";
 	const mf = new MessageFormat(converted, props.locale);
 	const list = mf.formatToParts(props.values);
 	const processed = ProcessPartsList(list);
-	return <>{...HetListToDOMTree(processed, props.components)}</>;
+	const contents = HetListToDOMTree(processed, props.components);
+	return <>{...contents}</>;
 }
 
 export default function Home() {
