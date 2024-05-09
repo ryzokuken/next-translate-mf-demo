@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.7.3",
     "@messageformat/core": "^3.3.0",
     "@messageformat/loader": "^1.0.0",
     "@types/node": "20.3.1",
