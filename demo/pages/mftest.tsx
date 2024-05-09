@@ -21,7 +21,7 @@ const msg =
 function convertMessageSyntax(msg: string) {
 	const replacedTags = msg
 		.replace(/<(\S+)>(.*)<\/\1>/g, "{#$1}$2{/$1}") // Convert open/close function syntax
-		.replace(/<(\S+)\/>/g, "{:$1}") // Convert standalone function syntax
+		.replace(/<(\S+)\/>/g, "{#$1/}") // Convert standalone function syntax
 		.replace(/{{(\S+)}}/g, "{$$$1}"); // Convert variable expression syntax
 	return `${replacedTags}`; // No need to wrap message (this is a simple message)
 }
@@ -123,6 +123,9 @@ function HetListToDOMTree(
 		switch (part.type) {
 			case "literal":
 				return <React.Fragment key={count++}>{part.value}</React.Fragment>;
+			case "markup":
+				// assert part.kind=standalone
+				return React.cloneElement(components[part.name], {key: count++});
 			case "number":
 				return (
 					<React.Fragment key={count++}>
@@ -169,19 +172,7 @@ export function Test() {
 
 function MF2Trans(props) {
 	const converted = convertMessageSyntax(props.message);
-	const mf = new MessageFormat(converted, props.locale, {
-		functions: {
-			icon: (ctx, opts, input) => ({
-				type: "standalone",
-				locale: ctx.locales[0],
-				source: "NA",
-				toString: () => "test",
-				toParts: () => [
-					{ type: "literal", value: "test-part" } as MessageExpressionPart,
-				],
-			}),
-		},
-	});
+	const mf = new MessageFormat(converted, props.locale);
 	const list = mf.formatToParts(props.values);
 	const processed = ProcessPartsList(list);
 	return <>{...HetListToDOMTree(processed, props.components)}</>;
