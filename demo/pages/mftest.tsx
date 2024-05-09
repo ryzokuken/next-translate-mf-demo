@@ -150,10 +150,10 @@ console.log("Processed:");
 console.log(processed);
 
 
-In the following, change `messageToUse` to `mf2Message` to test
-the `messageFormat2` attribute in Trans (not working yet),
-or change `mf2Message` back to `messageToUse` to test it with
-a message in next-translate syntax
+// In the following, change `messageToUse` to `mf2Message` to test
+// the `messageFormat2` attribute in Trans (not working yet),
+// or change `mf2Message` back to `messageToUse` to test it with
+// a message in next-translate syntax
 export function Test() {
     return (
     <>
