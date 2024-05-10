@@ -133,8 +133,12 @@ function HetListToDOMTree(
 					<>{messagePart.parts?.reduce((acc, part) => acc + part.value, "")}</>
 				);
 			}
-			default:
+			case "fallback": {
+				return <>{`{${messagePart.source}}`}</>;
+			}
+			default: {
 				throw new Error(`unreachable: ${messagePart.type}`);
+			}
 		}
 	});
 }
