@@ -18,12 +18,11 @@ import I18nProvider from "next-translate/I18nProvider";
 const msg =
 	"Click <link>here</link>. {{count}} or <b><i>{{count}}</i></b>. <icon/> is an icon.";
 
-function convertMessageSyntax(msg: string) {
-	const replacedTags = msg
-		.replace(/<(\S+)>(.*)<\/\1>/g, "{#$1}$2{/$1}") // Convert open/close function syntax
-		.replace(/<(\S+)\/>/g, "{#$1/}") // Convert standalone function syntax
-		.replace(/{{(\S+)}}/g, "{$$$1}"); // Convert variable expression syntax
-	return `${replacedTags}`; // No need to wrap message (this is a simple message)
+function convertMessageSyntax(message: string) {
+	return message
+		.replace(/<(\w+\/?)>/g, "{#$1}") // open/standalone
+		.replace(/<(\/\w+)>/g, "{$1}") // close
+		.replace(/{{(\S+)}}/g, "{$$$1}"); // variable expressions
 }
 
 type PartsListNode = MessagePart | Array<PartsListNode> | Markup;
