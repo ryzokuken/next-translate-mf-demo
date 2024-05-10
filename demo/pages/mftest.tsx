@@ -57,12 +57,6 @@ function ProcessPartsList(parts: MessagePart[]): PartsList {
 		if (toDo.length === 0) {
 			return accum;
 		}
-		// Literal node: append onto the existing list
-		if (toDo[0].type === "literal") {
-			return ProcessNodes(
-				accum.toSpliced(accum.length, 0, toDo.shift() as MessagePart),
-			);
-		}
 		// Markup node: should be an `open` node if the output of formatToParts()
 		// is valid.
 		if (toDo[0].type === "markup") {
@@ -85,7 +79,7 @@ function ProcessPartsList(parts: MessagePart[]): PartsList {
 				return accum;
 			}
 		}
-		// Default case (not markup or literal): append onto the existing list
+		// Default case (not markup): append onto the existing list
 		return ProcessNodes(
 			accum.toSpliced(accum.length, 0, toDo.shift() as MessagePart),
 		);
