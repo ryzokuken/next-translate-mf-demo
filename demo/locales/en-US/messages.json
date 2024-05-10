@@ -1,0 +1,4 @@
+{
+    "default-message": "Loaded message from file: Click {#link}here{/link}. {$count} or {#b}{#i}{$count}{/i}{/b}. {#icon/} is an icon.",
+    "second-message": ".match {$count :number} one {{One thing!}} * {{{$count :integer} things!}}"
+}
