@@ -3,8 +3,6 @@
 
 import React from "react";
 import useTranslation from "next-translate/useTranslation";
-// import { MessageFormat, MessageFormatOptions, MessageFunctions, MessageValue } from "@messageformat/core";
-// import { MessageFormat, MessageFormatOptions, MessageFunctions, MessageValue } from "messageformat";
 import {
 	MessageFormat,
 	MessageFormatOptions,
@@ -18,7 +16,6 @@ import Trans from "next-translate/Trans";
 import I18nProvider from "next-translate/I18nProvider";
 
 const msg =
-	//	"Click <link>here</link>. {{count}} or <b>{{count}}</b>. <icon/> is an icon.";
 	"Click <link>here</link>. {{count}} or <b><i>{{count}}</i></b>. <icon/> is an icon.";
 
 function convertMessageSyntax(msg: string) {
@@ -28,51 +25,6 @@ function convertMessageSyntax(msg: string) {
 		.replace(/{{(\S+)}}/g, "{$$$1}"); // Convert variable expression syntax
 	return `${replacedTags}`; // No need to wrap message (this is a simple message)
 }
-
-// const functions = {
-//     link: ({ source, locales: [locale] }, _opt, input) => ({
-//       type: 'custom',
-//       source,
-//       locale,
-//       toParts: () => [
-//         { type: 'custom', source, locale, value: `part:${input}` }
-//       ],
-//       toString: () => "<link>heyo!</link>"
-//     })
-// };
-
-const message =
-	"Click <link>here</link>. {{count}} or <b>{{count}}</b>. <icon/> is an icon.";
-const mf2Message = convertMessageSyntax(message);
-const messageToUse = message;
-
-// console.log("parts = " + JSON.stringify(parts));
-
-// for (const p in parts) {
-//    console.log(parts[p]);
-// }
-
-// var domNodes = [];
-// for (const p in parts) {
-//   if (p.type === 'literal') {
-//     domNodes += parts[p];
-//   } else if (p.type === 'markup') {
-//       if (p.kind === 'open') {
-//         domNodes += parts[p];
-//       } else if (p.kind === 'close') {
-//           var contents = [];
-//           for (const n in domNodes.toReversed()) {
-// // TODO: nesting/overlapping elements won't work this way
-//             if (n.kind === 'open') {
-//               break;
-//             }
-//             contents = n += contents;
-//             domNodes.pop();
-//           }
-//
-//       }
-//   }
-// }
 
 type PartsListNode = MessagePart | Array<PartsListNode> | Markup;
 type PartsList = Array<PartsListNode>;
@@ -87,9 +39,9 @@ class Markup {
 		this.child = child;
 	}
 
-	static isMarkup(obj: any): boolean {
+	static isMarkup(obj: object): boolean {
 		try {
-			return obj.#markup;
+			return (obj as Markup).#markup;
 		} catch {
 			return false;
 		}
@@ -197,7 +149,7 @@ function HetListToDOMTree(
 				);
 			}
 			default:
-				throw new Error("unreachable: " + messagePart.type);
+				throw new Error(`unreachable: ${messagePart.type}`);
 		}
 	});
 }
@@ -237,12 +189,7 @@ export default function Home() {
 */
 
 function MF2Trans(props) {
-	// const converted = convertMessageSyntax(props.message);
-	const converted =
-		//	"Click {#link}here{/link}. {$count} or {#b}{#i}{$count}{/i}{/b}. {#icon/} is an icon.";
-		// "hello {$count :number minimumFractionDigits=5}";
-		// ".match {$count :number} one {{one}} 1 {{=1}} * {{other}}"
-		"{|2006-01-02T15:04:06| :datetime dateStyle=long timeStyle=long}";
+	const converted = convertMessageSyntax(props.message);
 	const mf = new MessageFormat(converted, props.locale);
 	const list = mf.formatToParts(props.values);
 	const processed = ProcessPartsList(list);
@@ -255,7 +202,7 @@ export default function Home() {
 		<>
 			<p>
 				<MF2Trans
-					locale="en"
+					locale="en-US"
 					message={msg}
 					components={{
 						link: <a href="/" />,
