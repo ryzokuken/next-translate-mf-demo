@@ -33,7 +33,7 @@ class Markup {
 	name: string;
 	child: PartsList;
 
-	constructor(name, child) {
+	constructor(name: string, child: PartsList) {
 		this.#markup = true;
 		this.name = name;
 		this.child = child;
@@ -100,7 +100,7 @@ function HetListToDOMTree(
 	hetList: PartsList,
 	components: Record<string, React.JSX.Element>,
 ): JSX.Element[] {
-	return hetList.flatMap((part: PartsListNode, key) => {
+	return hetList.flatMap((part: PartsListNode) => {
 		// part is either a (nested) list of MessageParts, or a single MessagePart
 		if (Markup.isMarkup(part)) {
 			// `subtree` is all the nodes between the open and the close
@@ -112,36 +112,26 @@ function HetListToDOMTree(
 			const component = components[markup.name]; //assert
 			// Finally, wrap the sublist in a component of the kind
 			// that matches its markup's name
-			return React.cloneElement(component, { key }, ...subtree);
+			return React.cloneElement(component, undefined, ...subtree);
 		}
 		if (Array.isArray(part)) {
 			return HetListToDOMTree(part, components);
 		}
 		// If part is not an array, it must be a MessagePart
-		const messagePart = part as
-			| MessageLiteralPart
-			| MessageMarkupPart
-			| MessageExpressionPart;
+		const messagePart = part as MessagePart;
 		switch (messagePart.type) {
 			case "literal":
 				// Literals are just strings
-				return (
-					<React.Fragment key={key}>
-						{(messagePart as MessageLiteralPart).value}
-					</React.Fragment>
-				);
+				return <>{(messagePart as MessageLiteralPart).value}</>;
 			case "markup":
 				// assert part.kind=standalone
 				return React.cloneElement(
 					components[(messagePart as MessageMarkupPart).name],
-					{ key },
 				);
 			case "number":
 			case "datetime": {
 				return (
-					<React.Fragment key={key}>
-						{messagePart.parts?.reduce((acc, part) => acc + part.value, "")}
-					</React.Fragment>
+					<>{messagePart.parts?.reduce((acc, part) => acc + part.value, "")}</>
 				);
 			}
 			default:
@@ -184,7 +174,14 @@ export default function Home() {
 }
 */
 
-function MF2Trans(props) {
+type TransProps = {
+	locale: string;
+	message: string;
+	values: Record<string, unknown>;
+	components: Record<string, React.JSX.Element>;
+};
+
+function MF2Trans(props: TransProps) {
 	const converted = convertMessageSyntax(props.message);
 	const mf = new MessageFormat(converted, props.locale);
 	const list = mf.formatToParts(props.values);
@@ -201,6 +198,7 @@ export default function Home() {
 					locale="en-US"
 					message={msg}
 					components={{
+						// biome-ignore lint/a11y/useAnchorContent: content will be added by the formatter
 						link: <a href="/" />,
 						b: <b style={{ color: "purple" }} />,
 						i: <i />,
