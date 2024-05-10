@@ -191,23 +191,17 @@ function MF2Trans(props: TransProps) {
 
 export default function Home() {
 	return (
-		<>
-			<p>
-				<MF2Trans
-					locale="en-US"
-					message={msg}
-					components={{
-						// biome-ignore lint/a11y/useAnchorContent: content will be added by the formatter
-						link: <a href="/" />,
-						b: <b style={{ color: "purple" }} />,
-						i: <i />,
-						icon: (
-							<img src="https://imgs.xkcd.com/comics/purity.png" alt="dummy" />
-						),
-					}}
-					values={{ count: 42.2 }}
-				/>
-			</p>
-		</>
+		<MF2Trans
+			locale="en-US"
+			message={msg}
+			components={{
+				// biome-ignore lint/a11y/useAnchorContent: content will be added by the formatter
+				link: <a href="/" />,
+				b: <b style={{ color: "purple" }} />,
+				i: <i />,
+				icon: <img src="https://imgs.xkcd.com/comics/purity.png" alt="dummy" />,
+			}}
+			values={{ count: 42.2 }}
+		/>
 	);
 }
