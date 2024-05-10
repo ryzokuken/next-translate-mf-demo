@@ -9,6 +9,9 @@
     "lint": "next lint"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.24.5",
+    "@babel/preset-react": "^7.24.1",
+    "@babel/preset-typescript": "^7.24.1",
     "@biomejs/biome": "1.7.3",
     "@messageformat/core": "^3.3.0",
     "@messageformat/loader": "^1.0.0",

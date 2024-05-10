@@ -1,0 +1,9 @@
+// We need to use Babel because Next.js is broken and doesn't support
+// ES2022 features such as `#x in obj`
+{
+	"presets": [
+		"@babel/preset-env",
+		"@babel/preset-typescript",
+		["@babel/preset-react", { "runtime": "automatic" }]
+	]
+}

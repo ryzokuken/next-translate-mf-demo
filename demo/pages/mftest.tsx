@@ -40,11 +40,7 @@ class Markup {
 	}
 
 	static isMarkup(obj: object): boolean {
-		try {
-			return (obj as Markup).#markup;
-		} catch {
-			return false;
-		}
+		return #markup in obj;
 	}
 }
 
@@ -194,7 +190,7 @@ function MF2Trans(props) {
 	const list = mf.formatToParts(props.values);
 	const processed = ProcessPartsList(list);
 	const contents = HetListToDOMTree(processed, props.components);
-	return <>{...contents}</>;
+	return <>{contents}</>;
 }
 
 export default function Home() {
