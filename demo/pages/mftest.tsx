@@ -2,6 +2,7 @@
 // npm install -save-exact messageformat@next
 
 import React from "react";
+import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import useTranslation from "next-translate/useTranslation";
 import {
 	MessageFormat,
@@ -172,24 +173,67 @@ export default function Home() {
 */
 
 type TransProps = {
+	i18nKey?: string;
 	locale: string;
 	message: string;
 	values: Record<string, unknown>;
 	components: Record<string, React.JSX.Element>;
 };
 
+// Splits a string like 'a:b' into {ns: a, suffix: b}
+function splitKey(k: string): { ns: string; suffix: string } {
+	const i = k.indexOf(":");
+	if (i < 0) throw new Error(`namespace required, got ${k}`);
+	return { ns: k.slice(0, i), suffix: k.slice(i + 1) };
+}
+
+// Not sure if this is necessary to do first:
+// npm i babel-plugin-syntax-dynamic-import -D
+// Takes a key like ns:name and looks for the ${ns}.json file
+// in the relevant locale directory. `name` is used to index
+// within the file.
+// TODO: should probably get this directory from config instead
+// of hardcoding it
+async function getMessage(i18nKey: string, lang: string): Promise<string> {
+	const { ns, suffix } = splitKey(i18nKey);
+	return await import(`../locales/${lang}/${ns}.json`).then(
+		(m) => m.default[suffix],
+	);
+}
+
 function MF2Trans(props: TransProps) {
-	const converted = convertMessageSyntax(props.message);
-	const mf = new MessageFormat(converted, props.locale);
-	const list = mf.formatToParts(props.values);
-	const processed = ProcessPartsList(list);
-	const contents = HetListToDOMTree(processed, props.components);
-	return <>{contents}</>;
+	const [element, setElement] = useState<JSX.Element[]>();
+	if (setElement) {
+		useEffect(mf2TransFun(props, setElement));
+		return <>{element}</>;
+	}
+	return <></>;
+}
+
+function mf2TransFun(
+	props: TransProps,
+	setElement: Dispatch<SetStateAction<JSX.Element[] | undefined>>,
+) {
+	return () => {
+		// If i18nKey is supplied, read a message from the given namespace.
+		// Otherwise, use our hardcoded message that gets converted to MF2.
+		const convertedPromise: Promise<string> = props.i18nKey
+			? getMessage(props.i18nKey, props.locale)
+			: new Promise(() => convertMessageSyntax(props.message));
+		convertedPromise.then((converted) => {
+			const mf = new MessageFormat(converted, props.locale);
+			const list = mf.formatToParts(props.values);
+			const processed = ProcessPartsList(list);
+			const contents = HetListToDOMTree(processed, props.components);
+			setElement(contents);
+		});
+	};
 }
 
 export default function Home() {
 	return (
 		<MF2Trans
+			i18nKey="messages:default-message"
 			locale="en-US"
 			message={msg}
 			components={{
