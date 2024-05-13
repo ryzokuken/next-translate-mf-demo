@@ -10,10 +10,6 @@ module.exports = {
     '/dashboard': ['home'],
     'rgx:^/more-examples': ['more-examples'],
   },
-  interpolation: {
-    prefix: '${',
-    suffix: '}',
-  },
   loadLocaleFrom: async (locale, namespace) =>
     import(`./src/translations/${namespace}_${locale}`).then((r) => r.default),
 }
