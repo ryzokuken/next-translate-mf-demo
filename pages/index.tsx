@@ -126,11 +126,11 @@ function HetListToDOMTree(
 	});
 }
 
-
 type TransProps = {
-	i18nKey?: string;
 	locale: string;
-	message: string;
+	i18nKey?: string;
+	fallback?: string;
+	defaultTrans?: string;
 	values: Record<string, unknown>;
 	components: Record<string, React.JSX.Element>;
 };
@@ -173,8 +173,8 @@ function mf2TransFun(
 		// If i18nKey is supplied, read a message from the given namespace.
 		// Otherwise, use our hardcoded message that gets converted to MF2.
 		const convertedPromise: Promise<string> = props.i18nKey
-			? getMessage(props.i18nKey, props.locale)
-			: new Promise(() => props.message);
+			? getMessage(props.i18nKey ?? props.fallback, props.locale)
+			: new Promise(() => props.defaultTrans);
 		convertedPromise.then((jsxMessage) => {
       const converted = convertMessageSyntax(jsxMessage);
 			const mf = new MessageFormat(converted, props.locale);
