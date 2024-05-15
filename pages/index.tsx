@@ -14,8 +14,8 @@ function convertMessageSyntax(message: string) {
 		.replace(/{{(\S+)}}/g, "{$$$1}"); // variable expressions
 }
 
-type PartsListNode = MessagePart | Array<PartsListNode> | Markup;
-type PartsList = Array<PartsListNode>;
+type PartsList = Array<MessagePart | Markup>;
+
 class Markup {
 	#markup: boolean;
 	name: string;
@@ -34,7 +34,7 @@ class Markup {
 
 function ProcessPartsList(parts: MessagePart[]): PartsList {
 	// Make a copy of `parts` so we can modify it
-	const toDo: MessagePart[] = [...parts];
+	const toDo = [...parts];
 
 	// ProcessNodes() processes a flat list of message parts
 	// into a tree structure.
@@ -51,16 +51,16 @@ function ProcessPartsList(parts: MessagePart[]): PartsList {
 		if (toDo[0].type === "markup") {
 			const markupNode = toDo[0] as MessageMarkupPart;
 			if (markupNode.kind === "open") {
-				const openNode: MessageMarkupPart = toDo.shift() as MessageMarkupPart;
+				const openNode = toDo.shift() as MessageMarkupPart;
 				// Recursively process everything between the open and close nodes
 				const tree = ProcessNodes([]);
-				const closeNode: MessageMarkupPart = toDo.shift() as MessageMarkupPart;
+				const closeNode = toDo.shift() as MessageMarkupPart;
 				if (closeNode.kind !== "close") {
 					console.log("Warning: unmatched tags!");
 				}
 				// Append a new subtree representing the tree denoted by this markup open/close pair
 				// TODO: To handle arbitrary nesting, we really want `tree` and not `...tree`
-				const subtree: Markup = new Markup(openNode.name, tree);
+				const subtree = new Markup(openNode.name, tree);
 				return ProcessNodes(accum.toSpliced(accum.length, 0, subtree));
 			}
 			// When we see a close tag, we just return the accumulator
@@ -69,25 +69,25 @@ function ProcessPartsList(parts: MessagePart[]): PartsList {
 			}
 		}
 		// Default case (not markup): append onto the existing list
-		return ProcessNodes(
-			accum.toSpliced(accum.length, 0, toDo.shift() as MessagePart),
-		);
+		return ProcessNodes(accum.toSpliced(accum.length, 0, toDo.shift()!));
 	}
 	return ProcessNodes([]);
 }
+
+type Element = React.JSX.Element;
 
 // hetList is really a list of arbitrarily-nested lists where all the
 // leaf elements are MessageParts
 function HetListToDOMTree(
 	hetList: PartsList,
-	components: Record<string, React.JSX.Element>,
-): JSX.Element[] {
-	return hetList.flatMap((part: PartsListNode) => {
+	components: Record<string, Element>,
+): Element[] {
+	return hetList.flatMap((part) => {
 		// part is either a (nested) list of MessageParts, or a single MessagePart
 		if (Markup.isMarkup(part)) {
 			// `subtree` is all the nodes between the open and the close
 			const markup = part as Markup;
-			const subtree: JSX.Element[] = HetListToDOMTree(markup.child, components);
+			const subtree = HetListToDOMTree(markup.child, components);
 			// Use the name of the open node to look up the component in the map
 			// (we assume open.name === close.name)
 			// TODO: this means overlapping tags don't work
@@ -132,7 +132,7 @@ type TransProps = {
 	fallback?: string;
 	defaultTrans?: string;
 	values: Record<string, unknown>;
-	components: Record<string, React.JSX.Element>;
+	components: Record<string, Element>;
 };
 
 // Splits a string like 'a:b' into {ns: a, suffix: b}
@@ -157,7 +157,7 @@ async function getMessage(i18nKey: string, lang: string): Promise<string> {
 }
 
 function MF2Trans(props: TransProps) {
-	const [element, setElement] = useState<JSX.Element[]>();
+	const [element, setElement] = useState<Element[]>();
 	if (setElement) {
 		useEffect(mf2TransFun(props, setElement));
 		return <>{element}</>;
@@ -167,7 +167,7 @@ function MF2Trans(props: TransProps) {
 
 function mf2TransFun(
 	props: TransProps,
-	setElement: Dispatch<SetStateAction<JSX.Element[] | undefined>>,
+	setElement: Dispatch<SetStateAction<Element[] | undefined>>,
 ) {
 	return () => {
 		// If i18nKey is supplied, read a message from the given namespace.
@@ -176,7 +176,7 @@ function mf2TransFun(
 			? getMessage(props.i18nKey ?? props.fallback, props.locale)
 			: new Promise(() => props.defaultTrans);
 		convertedPromise.then((jsxMessage) => {
-      const converted = convertMessageSyntax(jsxMessage);
+			const converted = convertMessageSyntax(jsxMessage);
 			const mf = new MessageFormat(converted, props.locale);
 			const list = mf.formatToParts(props.values);
 			const processed = ProcessPartsList(list);
