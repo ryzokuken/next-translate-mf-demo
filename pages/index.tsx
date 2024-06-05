@@ -172,9 +172,9 @@ function mf2TransFun(
 	return () => {
 		// If i18nKey is supplied, read a message from the given namespace.
 		// Otherwise, use our hardcoded message that gets converted to MF2.
-		const convertedPromise: Promise<string> = props.i18nKey
+		const convertedPromise = props.i18nKey
 			? getMessage(props.i18nKey ?? props.fallback, props.locale)
-			: new Promise(() => props.defaultTrans);
+			: Promise.resolve(props.defaultTrans ?? "");
 		convertedPromise.then((jsxMessage) => {
 			const converted = convertMessageSyntax(jsxMessage);
 			const mf = new MessageFormat(converted, props.locale);
