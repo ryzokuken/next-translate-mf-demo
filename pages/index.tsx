@@ -1,5 +1,11 @@
 import React from "react";
-import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
+import {
+	useEffect,
+	useState,
+	useMemo,
+	type Dispatch,
+	type SetStateAction,
+} from "react";
 import {
 	MessageFormat,
 	type MessageLiteralPart,
@@ -156,37 +162,51 @@ async function getMessage(i18nKey: string, lang: string): Promise<string> {
 	);
 }
 
-function MF2Trans(props: TransProps) {
-	const [element, setElement] = useState<Element[]>();
-	if (setElement) {
-		useEffect(mf2TransFun(props, setElement));
-		return <>{element}</>;
-	}
-	return <></>;
+function MF2Trans({
+	i18nKey,
+	fallback,
+	locale,
+	defaultTrans,
+	values,
+	components,
+}: TransProps) {
+	const [jsxMessage, setJsxMessage] = useState<string>();
+
+	useEffect(() => {
+		const key = i18nKey ?? fallback;
+		if (!key) {
+			setJsxMessage(defaultTrans);
+			return;
+		}
+		getMessage(key, locale).then(setJsxMessage);
+	}, [i18nKey, fallback, defaultTrans, locale]);
+
+	const contents = useMemo(() => {
+		if (!jsxMessage) return null;
+		const converted = convertMessageSyntax(jsxMessage);
+		const mf = new MessageFormat(converted, locale);
+		const list = mf.formatToParts(values);
+		const processed = ProcessPartsList(list);
+		return HetListToDOMTree(processed, components);
+	}, [jsxMessage, locale, values, components]);
+
+	return <>{contents}</>;
 }
 
-function mf2TransFun(
-	props: TransProps,
-	setElement: Dispatch<SetStateAction<Element[] | undefined>>,
-) {
-	return () => {
-		// If i18nKey is supplied, read a message from the given namespace.
-		// Otherwise, use our hardcoded message that gets converted to MF2.
-		const convertedPromise = props.i18nKey
-			? getMessage(props.i18nKey ?? props.fallback, props.locale)
-			: Promise.resolve(props.defaultTrans ?? "");
-		convertedPromise.then((jsxMessage) => {
-			const converted = convertMessageSyntax(jsxMessage);
-			const mf = new MessageFormat(converted, props.locale);
-			const list = mf.formatToParts(props.values);
-			const processed = ProcessPartsList(list);
-			const contents = HetListToDOMTree(processed, props.components);
-			setElement(contents);
-		});
-	};
+// For demo purposes only
+function useDemoCounter() {
+	const [count, setCount] = useState(0);
+
+	useEffect(() => {
+		const interval = setInterval(() => setCount((c) => c + 1), 1000);
+		return () => clearInterval(interval);
+	}, []);
+
+	return count;
 }
 
 export default function Demo() {
+	const count = useDemoCounter();
 	return (
 		<MF2Trans
 			i18nKey="messages:default-message"
@@ -198,7 +218,7 @@ export default function Demo() {
 				i: <i />,
 				icon: <img src="https://imgs.xkcd.com/comics/purity.png" alt="dummy" />,
 			}}
-			values={{ count: 42.2 }}
+			values={{ count }}
 		/>
 	);
 }
